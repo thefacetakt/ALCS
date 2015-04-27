@@ -6,54 +6,17 @@
 
 using namespace std;
 
+const size_t SIZE_T_MAX(-1);
 
-int main()
+vector <vector <size_t> > parseCriticalPoints(const vector <size_t> &criticalPoints)
 {
-    string a, b;
-    cin >> a >> b;
-    vector <vector <int> > horisontalEdges(a.length() + 1, vector <int> (b.length() + 1, 0));
-    for (int j = 0; j <= b.length(); ++j)
-    {
-        horisontalEdges[0][j] = j;
-    }
-    vector <vector <int> > verticalEdges(a.length() + 1, vector <int> (b.length() + 1, 0));
-    for (size_t i = 1; i <= a.length(); ++i)
-    {
-        for (int j = 1; j <= b.length(); ++j)
-        {
-            if (a[i] != b[j])
-            {
-                horisontalEdges[i][j] = max(verticalEdges[i][j - 1], horisontalEdges[i - 1][j]);
-                verticalEdges[i][j] = min(verticalEdges[i][j - 1], horisontalEdges[i - 1][j]);
-            }
-            else
-            {
-                horisontalEdges[i][j] = verticalEdges[i][j - 1];
-                verticalEdges[i][j] = horisontalEdges[i - 1][j];
-            }
-           // printf("%d\t", horisontalEdges[i][j]);
-           // printf("%d %d %d %d\n", i, j, horisontalEdges[i][j], verticalEdges[i][j]);
-        }
-        //printf("\n");
-    }
+    vector <vector <size_t> > restore(criticalPoints.size() + 1, vector <size_t> (criticalPoints.size() + 1, 0));
     
-    printf("\n");
-    vector <int> criticalPoint(b.length() + 1, INT_MAX);
-    
-    for (int j = 1; j <= b.length(); ++j)
+    for (size_t i = criticalPoints.size() - 1; i != SIZE_T_MAX; --i)
     {
-        if (horisontalEdges[a.length()][j] != 0)
+        for (size_t j = criticalPoints.size(); j != SIZE_T_MAX; --j)
         {
-            criticalPoint[horisontalEdges[a.length()][j]] = j;
-        }
-    }
-    vector <vector <int> > restore(b.length() + 1, vector <int> (b.length() + 1, 0));
-    
-    for (int i = b.length() - 1; i >= 0; --i)
-    {
-        for (int j = b.length(); j >= 0; --j)
-        {
-            if (j <= criticalPoint[i] && j > i)
+            if (j < criticalPoints[i + 1] && j > i)
             {
                 restore[i][j] = restore[i + 1][j] + 1;
             }
@@ -63,16 +26,63 @@ int main()
             }
         }
     }
-    for (int i = 0; i <= b.length(); ++i)
+    return restore;
+}
+
+vector <size_t> getCriticalPoints(const string &a, const string &b)
+{
+    vector <vector <size_t> > horisontalEdges(a.length() + 1, vector <size_t> (b.length() + 1, 0));
+    for (size_t j = 0; j <= b.length(); ++j)
+    {
+        horisontalEdges[0][j] = j;
+    }
+    vector <vector <size_t> > verticalEdges(a.length() + 1, vector <size_t>    (b.length() + 1, 0));
+    for (size_t i = 1; i <= a.length(); ++i)
+    {
+        for (size_t j = 1; j <= b.length(); ++j)
+        {
+            if (a[i - 1] != b[j - 1])
+            {
+                horisontalEdges[i][j] = max(verticalEdges[i][j - 1], horisontalEdges[i - 1][j]);
+                verticalEdges[i][j] = min(verticalEdges[i][j - 1], horisontalEdges[i - 1][j]);
+            }
+            else
+            {
+                horisontalEdges[i][j] = verticalEdges[i][j - 1];
+                verticalEdges[i][j] = horisontalEdges[i - 1][j];
+            }
+        }
+    }
+    
+    vector <size_t> criticalPoints(b.length() + 1, INT_MAX);
+    
+    for (size_t j = 1; j <= b.length(); ++j)
+    {
+        if (horisontalEdges[a.length()][j] != 0)
+        {   
+            criticalPoints[horisontalEdges[a.length()][j]] = j;
+        }
+    }
+    return criticalPoints;
+}
+
+vector <vector <size_t> > ALCSSquareSolution(const string &a, const string &b)
+{
+    return parseCriticalPoints(getCriticalPoints(a, b));
+}
+
+int main()
+{
+    string a, b;
+    cin >> a >> b;
+    
+    vector <vector<size_t> > restore = ALCSSquareSolution(a, b);
+    for (size_t i = 0; i <= b.length(); ++i)
     {
         printf("%d:\t", i);
-        for (int j = 0; j <= b.length(); ++j)
-            printf("%d\t", restore[i][j]);
+        for (size_t j = 0; j <= b.length(); ++j)
+            printf("%d ", restore[i][j]);
         printf("\n");
-    }
-    for (int i = 0; i <= b.length(); ++i)
-    {
-        printf("%d %d\n", i, criticalPoint[i]);
     }
     return 0;
 }
