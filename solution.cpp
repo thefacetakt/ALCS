@@ -4,6 +4,7 @@
 #include <climits>
 #include <iostream>
 #include <algorithm>
+#include <random>
 
 namespace ALCSSquare
 {
@@ -104,20 +105,128 @@ namespace ALCSCubic
     }
 };
 
+
+
+namespace Testing
+{
+    
+    std::string currentString[2];
+    
+    bool test(const std::string &a, const std::string &b)
+    {
+        return (ALCSSquare::solution(a, b) != ALCSCubic::solution(a, b));
+    }
+    
+    namespace TestEveryPossibleString
+    {
+        const char alphabet[] = {'A', 'T', 'G', 'C'};
+        const int alphabetSize = 4;
+        const int MAXN = 5;
+        
+        bool generate(size_t i, size_t currentStringIndex)
+        {
+            if (i != 0)
+            {
+                if (currentStringIndex == 0)
+                {
+                    if (!generate(0, currentStringIndex + 1))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (!test(currentString[0], currentString[1]))
+                    {
+                        return false;
+                    }
+                }
+            }
+            if (i != MAXN)
+            {
+                for (size_t j = 0; j < alphabetSize; ++j)
+                {
+                    currentString[currentStringIndex].push_back(alphabet[j]);
+                    if (!generate(i + 1, currentStringIndex))
+                    {
+                        return false;
+                    }
+                    currentString[currentStringIndex].pop_back();
+                }
+            }
+            return true;
+        }
+    };
+    
+    namespace TestRandomString
+    {
+        
+        std::default_random_engine generator;
+        void init()
+        {
+            generator.seed(1);
+        }
+        
+        bool generate(int maxN, char maxLetter, bool measureTime)
+        {
+            std::uniform_int_distribution<size_t> sizeGetter(1, maxN);
+            std::uniform_int_distribution<char> letterGetter('a', maxLetter);
+            size_t length[2];
+            for (size_t i = 0; i < 2; ++i)
+            {
+                length[i] = sizeGetter(generator);
+                currentString[i].resize(length[i]);
+                for (size_t j = 0; j < length[i]; ++j)
+                    currentString[i][j] = letterGetter(generator);
+            }
+            if (!measureTime)
+            {
+                return test(currentString[0], currentString[1]);
+            }
+            else
+            {
+                FILE *timeLog = fopen("timeLog.txt", "a");
+                clock_t start = clock();
+                ALCSSquare::solution(currentString[0], currentString[1]);
+                fprintf(timeLog, "%zu, %lf\n", length[0] * length[1], static_cast<double>(clock() - start) / CLOCKS_PER_SEC);
+                fclose(timeLog);
+                return true;
+            }
+        }
+    };
+    
+    void test()
+    {
+        FILE *timeLog = fopen("timeLog.txt", "w");
+        fclose(timeLog);
+        const char smallLetter = 'd';
+        const char largeLetter = 'z';
+        
+        if (!TestEveryPossibleString::generate(0, 0))
+        {
+            return void(printf("FAIL\n"));
+        }
+        printf("OK ALL POSSIBLE TEST\n");
+        TestRandomString::init();
+        
+        for (size_t i = 1; i <= 500; i += 10)
+        {
+            if (!TestRandomString::generate(i, smallLetter, 0) || !TestRandomString::generate(i, largeLetter, 0))
+            {
+                return void(printf("FAIL\n"));
+            }
+        }
+        for (size_t i = 1; i <= 5000; i += 50)
+        {
+            TestRandomString::generate(i, smallLetter, 1);
+            TestRandomString::generate(i, largeLetter, 1);
+        }
+        printf("OK RANDOM TESTS\n");
+    }
+};
+
 int main(int argc, char **argv)
 {
-    std::string a, b;
-    std::cin >> a >> b;
-    
-    std::vector <std::vector<size_t> > restore = ALCSSquare::solution(a, b);
-
-
-    for (size_t i = 0; i <= b.length(); ++i)
-    {
-        std::cout << i << "\t";
-        for (size_t j = 0; j <= b.length(); ++j)
-            std::cout << restore[i][j] << "\t";
-        std::cout << std::endl;
-    }
+    Testing::test();
     return 0;
 }
